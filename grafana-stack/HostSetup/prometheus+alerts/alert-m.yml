@@ -1,0 +1,16 @@
+global:
+  resolve_timeout: 1m
+
+route:
+  receiver: 'ses-notifications'
+
+receivers:
+- name: 'ses-notifications'
+  email_configs:
+  - to: ahmad@test.com
+    from: grafana-metrics@test.com
+    smarthost: email-smtp.ap-south-1.amazonaws.com:587
+    auth_username: ABCD
+    auth_identity: ABCD
+    auth_password: XYZ
+    send_resolved: true
