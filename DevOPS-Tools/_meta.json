@@ -1,0 +1,19 @@
+{
+    "helm": "helm",
+    "Argo-CD": "Argo-CD",
+    "k9s": "k9s",
+    "Trevy": "Trevy",
+    "Docker": "Docker",
+    "grafana-stack": "grafana-stack",
+    "efk-stack": "efk-stack",
+    "kafka-setup": "kafka-setup",
+    "kind-configs": "kind-configs",
+    "minikube": "minikube",
+    "SonarQube": "SonarQube",
+    "Zabbix": "Zabbix",
+    "CICD": "CICD",
+    "Gitlab": "Gitlab",
+    "k8s-DB-PV": "k8s-DB-PV"
+  
+
+}
