@@ -1,0 +1,351 @@
+# Namespace for logging
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: kube-logging
+
+---
+
+# Elasticsearch Service for internal communication within the StatefulSet
+kind: Service
+apiVersion: v1
+metadata:
+  name: elasticsearch
+  namespace: kube-logging
+  labels:
+    app: elasticsearch
+spec:
+  selector:
+    app: elasticsearch
+  clusterIP: None
+  ports:
+    - port: 9200
+      name: rest
+    - port: 9300
+      name: inter-node
+
+---
+
+# PersistentVolume for Elasticsearch data storage ( it will minikube localstorage)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: es-data-pv
+  labels:
+    app: elasticsearch
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: standard
+  hostPath:
+    path: /mnt/data/elasticsearch # Ensure this path exists on the Minikube VM
+
+---
+
+# StatefulSet for Elasticsearch Cluster
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: es-cluster
+  namespace: kube-logging
+spec:
+  serviceName: elasticsearch
+  replicas: 3
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+      - name: elasticsearch
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.2.0
+        resources:
+          limits:
+            cpu: 1000m
+          requests:
+            cpu: 100m
+        ports:
+        - containerPort: 9200
+          name: rest
+          protocol: TCP
+        - containerPort: 9300
+          name: inter-node
+          protocol: TCP
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/elasticsearch/data
+        env:
+          - name: cluster.name
+            value: k8s-logs
+          - name: node.name
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: discovery.seed_hosts
+            value: "es-cluster-0.elasticsearch,es-cluster-1.elasticsearch,es-cluster-2.elasticsearch"
+          - name: cluster.initial_master_nodes
+            value: "es-cluster-0,es-cluster-1,es-cluster-2"
+          - name: ES_JAVA_OPTS
+            value: "-Xms512m -Xmx512m"
+      initContainers:
+      - name: fix-permissions
+        image: busybox
+        command: ["sh", "-c", "chown -R 1000:1000 /usr/share/elasticsearch/data"]
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/elasticsearch/data
+      - name: increase-vm-max-map
+        image: busybox
+        command: ["sysctl", "-w", "vm.max_map_count=262144"]
+        securityContext:
+          privileged: true
+      - name: increase-fd-ulimit
+        image: busybox
+        command: ["sh", "-c", "ulimit -n 65536"]
+        securityContext:
+          privileged: true
+
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+      labels:
+        app: elasticsearch
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+      storageClassName: standard # Must match the storageClassName defined in the PV above
+
+---
+
+# Kibana for dashboards
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana
+  namespace: kube-logging
+  labels:
+    app: kibana
+spec:
+  ports:
+  - port: 5601
+  selector:
+    app: kibana
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana
+  namespace: kube-logging
+  labels:
+    app: kibana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      containers:
+      - name: kibana
+        image: docker.elastic.co/kibana/kibana:7.2.0
+        resources:
+          limits:
+            cpu: 1000m
+          requests:
+            cpu: 100m
+        env:
+          - name: ELASTICSEARCH_URL
+            value: http://elasticsearch:9200
+        ports:
+        - containerPort: 5601
+
+---
+
+# FluentD for Log collecting agent from all nodes
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fluentd
+  namespace: kube-logging
+  labels:
+    app: fluentd
+
+---
+
+# FluentD for Log collecting agent from all nodes
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: fluentd
+  labels:
+    app: fluentd
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+
+---
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: fluentd
+roleRef:
+  kind: ClusterRole
+  name: fluentd
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: fluentd
+  namespace: kube-logging
+
+---
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluentd
+  namespace: kube-logging
+  labels:
+    app: fluentd
+spec:
+  selector:
+    matchLabels:
+      app: fluentd
+  template:
+    metadata:
+      labels:
+        app: fluentd
+    spec:
+      serviceAccount: fluentd
+      serviceAccountName: fluentd
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+      - name: fluentd
+        image: fluent/fluentd-kubernetes-daemonset:v1.4.2-debian-elasticsearch-1.1
+        env:
+          - name:  FLUENT_ELASTICSEARCH_HOST
+            value: "elasticsearch.kube-logging.svc.cluster.local"
+          - name:  FLUENT_ELASTICSEARCH_PORT
+            value: "9200"
+          - name: FLUENT_ELASTICSEARCH_SCHEME
+            value: "http"
+          - name: FLUENTD_SYSTEMD_CONF
+            value: disable
+        resources:
+          limits:
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+
+
+---
+
+# Logging Pod in default ns (ecommerce-app)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ecommerce-logger
+spec:
+  containers:
+  - name: ecommerce-log-generator
+    image: busybox
+    args:
+      - /bin/sh
+      - -c
+      - |
+        while true; do
+          timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+          user="user$((RANDOM % 4 + 1))"
+          action_num=$((RANDOM % 6))
+          product=""
+
+          case $action_num in
+            0) action="Login";;
+            1) action="Logout";;
+            2) action="Cart Added"; product=$(echo "Product: Laptop");;
+            3) action="Buy Item"; product=$(echo "Product: Phone");;
+            4) action="Search Item";;
+            5) action="Checkout";;
+          esac
+
+          if [ -n "$product" ]; then
+            echo "$timestamp | $user | $action | $product"
+          else
+            echo "$timestamp | $user | $action"
+          fi
+
+          sleep $((RANDOM % 5 + 1))
+        done
+
+---
+
+# Logging Pod in default ns (payment-app)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: payment-logger
+spec:
+  containers:
+  - name: payment-log-generator
+    image: busybox
+    args:
+      - /bin/sh
+      - -c
+      - |
+        while true; do
+          timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+          user="user$((RANDOM % 10 + 1))"
+          order_id="order$((RANDOM % 100 + 1))"
+          transaction_id="txn$((RANDOM % 1000 + 1))"
+          action_num=$((RANDOM % 8))
+
+          case $action_num in
+            0) echo "$timestamp | INFO | User: $user | Action: User logged in";;
+            1) echo "$timestamp | INFO | User: $user | Action: Payment initiated | Order ID: $order_id | Transaction ID: $transaction_id";;
+            2) echo "$timestamp | SUCCESS | User: $user | Action: Payment completed | Order ID: $order_id | Transaction ID: $transaction_id";;
+            3) echo "$timestamp | WARNING | User: $user | Action: Payment pending | Order ID: $order_id";;
+            4) echo "$timestamp | ERROR | User: $user | Action: Payment failed | Order ID: $order_id | Reason: Insufficient funds";;
+            5) echo "$timestamp | INFO | User: $user | Action: Logout";;
+            6) echo "$timestamp | INFO | User: $user | Action: Order confirmed | Order ID: $order_id";;
+            7) echo "$timestamp | INFO | User: $user | Action: Cart cleared";;
+          esac
+
+          sleep $((RANDOM % 5 + 1))
+        done
