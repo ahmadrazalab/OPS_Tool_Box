@@ -39,7 +39,8 @@ After=network-online.target
 [Service]
 User=$NODE_EXPORTER_USER
 ExecStart=$NODE_EXPORTER_DIR/node_exporter
-Restart=always
+Restart=on-failure
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target
@@ -55,8 +56,16 @@ sudo systemctl start node_exporter
 echo "Checking Node Exporter service status..."
 sudo systemctl status node_exporter
 
+
+echo ""
+echo ""
+echo ""
+echo ""
+
+# #################################################################
+
 # Prometheus configuration for Node Exporter
-echo " Prometheus configuration for Node Exporter"
+echo " Prometheus configuration for Node Exporter (Update This in Prom Configuration)"
 Systemhostname=$(hostname)
 IPofSYSTEM=$(curl -s ifconfig.me)
 # Print the configuration content to the terminal
@@ -67,3 +76,9 @@ cat <<EOF
     static_configs:
       - targets: ['$IPofSYSTEM:9100']
 EOF
+
+
+
+#######################################################################
+echo " Open 9100 port from this Server and allow Grafana IP (4.186.62.161)"
+
