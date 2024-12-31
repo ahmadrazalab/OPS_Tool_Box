@@ -31,6 +31,8 @@ output:
 
 
 
+kubectl create secret generic fluentd-aws-credentials --from-literal=AWS_ACCESS_KEY_ID=x --from-literal=AWS_SECRET_ACCESS_KEY=x -n kube-logging
+
 
 
 
