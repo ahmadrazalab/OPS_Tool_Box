@@ -276,3 +276,5 @@ spec:
         hostPath:
           path: /var/lib/docker/containers
 
+# k port-forward svc/kibana -n kube-logging 5601:5601
+# k port-forward svc/elasticsearch -n kube-logging 9200:9200
