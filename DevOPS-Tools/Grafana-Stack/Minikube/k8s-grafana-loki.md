@@ -48,7 +48,7 @@ Before deploying, save the default values to a YAML file:
 helm show values grafana/loki-stack > loki.yaml
 ```
 
-In `loki.yaml`, modify the `grafana` configuration to enable it by setting it to `true`, and optionally set the tag to `latest` to deploy the latest version.
+`NOTE` : In `loki.yaml`, modify the `grafana` configuration to enable it by setting it to `true`, and optionally set the tag to `latest` to deploy the latest version.
 
 ### Persistent Volume Storage (Optional)
 To store logs in a Persistent Volume instead of the file system, configure a PVC in Loki. Since Loki is deployed as a StatefulSet, it retains logs even after a pod restart.
