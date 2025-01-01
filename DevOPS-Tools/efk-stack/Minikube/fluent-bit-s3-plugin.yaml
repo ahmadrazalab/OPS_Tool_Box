@@ -140,7 +140,7 @@ spec:
               subPath: fluent-bit.conf
           env:
             - name: AWS_ACCESS_KEY_ID
-              value: ""
+              value: "xx"
             - name: AWS_SECRET_ACCESS_KEY
-              value: ""
+              value: "xx"
               
