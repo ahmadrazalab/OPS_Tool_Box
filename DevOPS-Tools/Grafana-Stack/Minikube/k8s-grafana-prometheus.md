@@ -73,6 +73,7 @@ To access Prometheus and Grafana from your local machine, use port-forwarding: (
 ```bash
 kubectl port-forward service/prometheus-server --namespace monitoring 8090:80
 kubectl port-forward service/grafana --namespace monitoring 3000:80
+kubectl patch svc grafana -n monitoring -p '{"spec": {"type": "NodePort"}}'
 ```
 
 Now you can access:
