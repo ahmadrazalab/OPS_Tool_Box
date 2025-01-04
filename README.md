@@ -7,6 +7,7 @@ Whether you're setting up Grafana, Kibana, Fluent Bit, Istio, ArgoCD, or other p
 
 
 # Directory structure
+```bash
 ├── Apps
 │   ├── k8-log-generator
 │   │   ├── 1-demo-loggers.yaml
@@ -74,3 +75,4 @@ Whether you're setting up Grafana, Kibana, Fluent Bit, Istio, ArgoCD, or other p
 │   │   └── Systemctl-KafkaZ.md
 │   └── Trevy.md
 └── README.md
+```
