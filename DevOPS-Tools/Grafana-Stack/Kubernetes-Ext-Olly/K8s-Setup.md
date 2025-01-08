@@ -111,4 +111,54 @@ kubectl describe pod prometheus-server-pod-name -n monitoring
 `Imp` : Grafana Dash ID's for Kubernetes : 15760 / 15757
 ---
 
+## Step 5: if prometheus pod is in error state due to PV and PVC 
+
+Create a PV and PVC with storage class in any one of the nodes which use the local storage to storage the data or you can use the AWS ebs if needed in you enviroment. `Provide the Node Name`
+
+```bash
+# cat persistent-volumes.yaml 
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: prometheus-server-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/prometheus  # Path on the node verify the permissions of this dir 
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - <NODE-NAME> # Node name where PV have to be create in local storage /mnt/data/prometheus
+
+# cat persistent-volume-claim.yaml 
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-server
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: prometheus-storage  # Use the StorageClass if needed
+
+# cat storage-class.yaml 
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: prometheus-storage
+provisioner: kubernetes.io/no-provisioner  # This is for local storage (not cloud)
+volumeBindingMode: WaitForFirstConsumer
+```
+
 > This setup allows you to collect logs via Promtail and metrics via Prometheus in your EKS cluster, pushing them to external Loki and Prometheus services for centralized monitoring.

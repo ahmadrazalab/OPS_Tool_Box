@@ -22,6 +22,9 @@ Expose the Argo CD API server locally:
 
 ```bash
 kubectl port-forward svc/argocd-server -n argocd 8080:443
+# or
+kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "NodePort", "ports": [{"port": 80, "targetPort": 8080, "nodePort": 30080}, {"port": 443, "targetPort": 8081, "nodePort": 30443}]}}'
+
 ```
 
 Access the UI at: [https://localhost:8080](https://localhost:8080)
