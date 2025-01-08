@@ -61,7 +61,9 @@ k get pods -n monitoring
 Update the Helm repositories and install Prometheus in the `monitoring` namespace:
 
 ```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
+helm search repo prometheus-community
 helm install prometheus prometheus-community/prometheus --namespace monitoring --create-namespace
 k get pods -n monitoring
 ```
@@ -103,8 +105,10 @@ Check the status of Prometheus pods:
 
 ```bash
 k get pods -n monitoring
+kubectl describe pod prometheus-server-pod-name -n monitoring
 ```
 
+`Imp` : Grafana Dash ID's for Kubernetes : 15760 / 15757
 ---
 
 > This setup allows you to collect logs via Promtail and metrics via Prometheus in your EKS cluster, pushing them to external Loki and Prometheus services for centralized monitoring.
