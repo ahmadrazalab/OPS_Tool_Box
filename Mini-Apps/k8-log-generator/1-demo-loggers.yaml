@@ -1,0 +1,87 @@
+
+# Logging Pod in default ns (ecommerce-app)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ecommerce-logger
+spec:
+  containers:
+  - name: ecommerce-log-generator
+    image: busybox
+    resources:
+      limits:
+        cpu: 500m
+        memory: 500Mi
+      requests:
+        cpu: 500m
+        memory: 500Mi
+    args:
+      - /bin/sh
+      - -c
+      - |
+        while true; do
+          timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+          user="user$((RANDOM % 4 + 1))"
+          action_num=$((RANDOM % 6))
+          product=""
+
+          case $action_num in
+            0) action="Login";;
+            1) action="Logout";;
+            2) action="Cart Added"; product=$(echo "Product: Laptop");;
+            3) action="Buy Item"; product=$(echo "Product: Phone");;
+            4) action="Search Item";;
+            5) action="Checkout";;
+          esac
+
+          if [ -n "$product" ]; then
+            echo "$timestamp | $user | $action | $product"
+          else
+            echo "$timestamp | $user | $action"
+          fi
+
+          sleep $((RANDOM % 5 + 1))
+        done
+
+---
+
+# Logging Pod in default ns (payment-app)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: payment-logger
+spec:
+  containers:
+  - name: payment-log-generator
+    image: busybox
+    resources:
+      limits:
+        cpu: 500m
+        memory: 500Mi
+      requests:
+        cpu: 500m
+        memory: 500Mi
+    args:
+      - /bin/sh
+      - -c
+      - |
+        while true; do
+          timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+          user="user$((RANDOM % 10 + 1))"
+          order_id="order$((RANDOM % 100 + 1))"
+          transaction_id="txn$((RANDOM % 1000 + 1))"
+          action_num=$((RANDOM % 8))
+
+          case $action_num in
+            0) echo "$timestamp | INFO | User: $user | Action: User logged in";;
+            1) echo "$timestamp | INFO | User: $user | Action: Payment initiated | Order ID: $order_id | Transaction ID: $transaction_id";;
+            2) echo "$timestamp | SUCCESS | User: $user | Action: Payment completed | Order ID: $order_id | Transaction ID: $transaction_id";;
+            3) echo "$timestamp | WARNING | User: $user | Action: Payment pending | Order ID: $order_id";;
+            4) echo "$timestamp | ERROR | User: $user | Action: Payment failed | Order ID: $order_id | Reason: Insufficient funds";;
+            5) echo "$timestamp | INFO | User: $user | Action: Logout";;
+            6) echo "$timestamp | INFO | User: $user | Action: Order confirmed | Order ID: $order_id";;
+            7) echo "$timestamp | INFO | User: $user | Action: Cart cleared";;
+          esac
+
+          sleep $((RANDOM % 5 + 1))
+        done
