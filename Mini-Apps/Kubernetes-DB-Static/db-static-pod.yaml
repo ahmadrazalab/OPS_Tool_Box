@@ -1,0 +1,30 @@
+# This mysql pod is designed to be used for all the applications in the cluster of k8, which store the data in local /home/docker/db-data
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mysql-static-pod
+  labels:
+    app: mysql-static # This will match with the Service  (kubectl describe svc svc-name) and check endpoints to get the connection details 
+spec:
+  containers:
+  - name: mysql
+    image: mysql:latest
+    env:
+    - name: MYSQL_ROOT_PASSWORD
+      value: "password"
+    - name: MYSQL_DATABASE
+      value: "test"
+    - name: MYSQL_USER
+      value: "admin"
+    - name: MYSQL_PASSWORD
+      value: "password"
+    ports:
+    - containerPort: 3306
+    volumeMounts:
+    - name: mysql-data
+      mountPath: /var/lib/mysql
+  volumes:
+  - name: mysql-data
+    hostPath:
+      path: /home/docker/db-data #Update this path to the directory on the host where you want to store MySQL data (in minikube it will store the data in minikube user home path )
+      type: DirectoryOrCreate

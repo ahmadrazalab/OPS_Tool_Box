@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-static-pod-service
+spec:
+  selector:
+    app: mysql-static
+  ports:
+  - protocol: TCP
+    port: 3306
+    targetPort: 3306
+    nodePort: 31237 #Specify a nodePort in the range 30000-32767  
+  type: NodePort
+
+
+# using this svc the mysql public pod is accessible from all over the cluster and public node port 
