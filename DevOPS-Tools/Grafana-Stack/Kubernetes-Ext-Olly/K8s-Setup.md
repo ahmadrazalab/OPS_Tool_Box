@@ -87,9 +87,25 @@ nano prom-values.yaml
 Modify the `remote_write` section:
 
 ```yaml
-remote_write:
+remoteWrite:
   - url: "http://<external-prometheus-ip>:9090/api/v1/write"
 ```
+Modify the `Persistent storage` section:
+
+```yaml
+server:
+  enabled: true
+  persistence:
+    enabled: false  # Disable persistent storage
+```
+Modify the `Persistent storage` section:
+```yaml
+alertmanager:
+  enabled: true
+  persistence:
+    enabled: false  # Disable persistence to avoid using PersistentVolumes
+```
+> If Required `kubectl delete statefulset prometheus-alertmanager -n monitoring`
 
 > **Note:** Ensure that the external Prometheus has the flag `--web.enable-remote-write-receiver` enabled to accept connections from the EKS Prometheus.
 
@@ -105,7 +121,7 @@ Check the status of Prometheus pods:
 
 ```bash
 k get pods -n monitoring
-kubectl describe pod prometheus-server-pod-name -n monitoring
+kubectl describe pod <prometheus-server-pod-name> -n monitoring
 ```
 
 `Imp` : Grafana Dash ID's for Kubernetes : 15760 / 15757
