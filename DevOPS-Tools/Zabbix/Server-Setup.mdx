@@ -1,0 +1,70 @@
+### Guide to Set Up Zabbix Monitoring Tool Server Using Docker Compose
+
+This guide will help you set up a Zabbix monitoring tool server using Docker Compose by cloning the official Zabbix Docker repository.
+
+### Prerequisites
+
+1. **Docker and Docker Compose**: Ensure Docker and Docker Compose are installed on your system.
+
+### Step-by-Step Guide
+
+1. **Clone the Official Zabbix Docker Repository**:
+   Clone the repository from GitHub to your local machine.
+   ```bash
+   git clone https://github.com/zabbix/zabbix-docker.git
+   cd zabbix-docker
+   ```
+
+
+
+2. **Customize Environment Variables**:
+   If needed, you can customize the `.env` file to change default settings. For now, we'll proceed with the defaults.
+
+3. **Start the Zabbix Containers**:
+   Run Docker Compose to start all the Zabbix services.
+   ```bash
+   docker-compose up -d
+   ```
+
+4. **Verify the Containers Are Running**:
+   Check the status of the containers to ensure everything is up and running.
+   ```bash
+   docker-compose ps
+   ```
+
+5. **Access the Zabbix Web Interface**:
+   Open your web browser and go to `http://localhost:8080`. You should see the Zabbix setup screen.
+
+6. **Finish Zabbix Setup**:
+   Follow the setup instructions on the web interface:
+   - **Database type**: MySQL
+   - **Database host**: mysql
+   - **Database port**: 3306
+   - **Database name**: zabbix
+   - **User**: zabbix
+   - **Password**: zabbix
+
+   Leave the rest of the settings as default.
+
+7. **Login to Zabbix**:
+   After completing the setup, log in to the Zabbix web interface using the default credentials:
+   - **Username**: Admin
+   - **Password**: zabbix
+
+### Additional Configuration
+
+1. **Secure Your Database**:
+   Change the default database passwords in the `.env` file and ensure the passwords are secure.
+
+2. **Backup Data**:
+   Regularly back up the volumes used by the containers to avoid data loss.
+
+3. **Monitor Other Hosts**:
+   Add other hosts and configure monitoring for them within the Zabbix web interface.
+
+4. **Set Up Alerts and Notifications**:
+   Configure Zabbix to send alerts and notifications based on your monitoring needs.
+
+### Conclusion
+
+> By following this guide, you should have a fully functional Zabbix monitoring tool server running with Docker Compose using the official Zabbix Docker repository. This setup provides a scalable and easily maintainable monitoring solution.

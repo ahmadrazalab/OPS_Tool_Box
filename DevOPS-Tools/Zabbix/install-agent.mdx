@@ -1,0 +1,166 @@
+# Introduction
+
+This guide outlines the process for manually installing an SSL certificate for Zabbix and setting up Zabbix Agent2 on Ubuntu 20.04 and 22.04. The guide covers domain mapping, SSL certificate issuance, Zabbix Agent2 installation, and configuration.
+
+## Manual SSL Certificate Setup for Zabbix
+
+### Steps
+
+1. **Map Domain to Server IP**
+
+   Ensure that your domain is correctly mapped to your server's IP address.
+
+2. **Open the HTTPS Port in Security Groups**
+
+   Make sure the HTTPS port (usually port 443) is open in your security groups for certificate signing.
+
+3. **Stop Zabbix Docker Containers**
+
+   Navigate to the Zabbix Docker directory and stop the containers:
+
+   ```bash
+   cd /home/ubuntu/zabbix-docker
+   docker-compose -f docker-compose_v3_ubuntu_mysql_latest.yaml down
+   ```
+
+4. **Start NGINX Service**
+
+   Start the NGINX service to facilitate the certificate issuance:
+
+   ```bash
+   service nginx start
+   ```
+
+5. **Issue SSL Certificate Using Certbot**
+
+   Use Certbot to obtain an SSL certificate:
+
+   ```bash
+   sudo certbot --nginx -d example.example.com
+   ```
+
+6. **Stop NGINX Service**
+
+   After obtaining the certificate, stop the NGINX service:
+
+   ```bash
+   service nginx stop
+   ```
+
+7. **Copy SSL Certificates to Zabbix Directory**
+
+   Navigate to the SSL directory and copy the SSL certificates:
+
+   ```bash
+   cd /home/ubuntu/zabbix-docker/zbx_env/etc/ssl/nginx
+   cp /etc/letsencrypt/live/example.example.com/* .
+   ```
+
+   Rename and set permissions for the SSL files:
+
+   ```bash
+   sudo cp cert.pem ssl.crt
+   sudo cp privkey.pem ssl.key
+   sudo cp chain.pem dhparam.pem
+   chmod -R 777 *
+   sudo openssl dhparam -out dhparam.pem 2048
+   ```
+
+8. **Restart Zabbix Docker Containers**
+
+   Restart the Zabbix Docker containers:
+
+   ```bash
+   cd /home/ubuntu/zabbix-docker
+   docker-compose -f docker-compose_v3_ubuntu_mysql_latest.yaml up -d
+   ```
+
+## Zabbix Agent2 Installation on Ubuntu
+
+### For Ubuntu 22.04
+
+1. **Add Zabbix Repository**
+
+   Download and install the Zabbix repository package:
+
+   ```bash
+   wget https://repo.zabbix.com/zabbix/6.4/ubuntu/pool/main/z/zabbix-release/zabbix-release_6.4-1+ubuntu22.04_all.deb
+   dpkg -i zabbix-release_6.4-1+ubuntu22.04_all.deb
+   ```
+
+2. **Update Package List and Install Zabbix Agent2**
+
+   Update the package list and install Zabbix Agent2:
+
+   ```bash
+   apt update
+   apt install zabbix-agent2 zabbix-agent2-plugin-*
+   ```
+
+3. **Start and Enable Zabbix Agent2**
+
+   Restart and enable Zabbix Agent2:
+
+   ```bash
+   systemctl restart zabbix-agent2
+   systemctl enable zabbix-agent2
+   ```
+
+### For Ubuntu 20.04
+
+1. **Add Zabbix Repository**
+
+   Download and install the Zabbix repository package:
+
+   ```bash
+   wget https://repo.zabbix.com/zabbix/6.4/ubuntu/pool/main/z/zabbix-release/zabbix-release_6.4-1+ubuntu20.04_all.deb
+   dpkg -i zabbix-release_6.4-1+ubuntu20.04_all.deb
+   ```
+
+2. **Update Package List and Install Zabbix Agent2**
+
+   Update the package list and install Zabbix Agent2:
+
+   ```bash
+   apt update
+   apt install zabbix-agent2 zabbix-agent2-plugin-*
+   ```
+
+3. **Start and Enable Zabbix Agent2**
+
+   Restart and enable Zabbix Agent2:
+
+   ```bash
+   systemctl restart zabbix-agent2
+   systemctl enable zabbix-agent2
+   ```
+
+## Zabbix Agent2 Configuration
+
+1. **Update Configuration File**
+
+   Edit the Zabbix Agent2 configuration file to set the server IP and hostname:
+
+   ```bash
+   sudo sed -i 's/Server=1270.0./Server=new_server_ip/g; s/ServerActive=xx.xx.xx.xx/ServerActive=new_server_ip/g; s/Hostname=Zabbixonuat/Hostname=new_hostname/g' /etc/zabbix/zabbix_agent2.conf
+   ```
+
+2. **Automated Configuration**
+
+   Create a backup of the configuration file and apply changes:
+
+   ```bash
+   cp /etc/zabbix/zabbix_agent2.conf .
+   sed -i 's/Server=.*$/Server=xx.xx.xx.xx/' /etc/zabbix/zabbix_agent2.conf
+   sed -i 's/ServerActive=.*$/ServerActive=xx.xx.xx.xx/' /etc/zabbix/zabbix_agent2.conf
+   sed -i 's/Hostname=.*$/Hostname=py-upi-gateway-server/' /etc/zabbix/zabbix_agent2.conf
+   systemctl restart zabbix-agent2
+   ```
+
+## Conclusion
+
+This guide provides detailed steps for manually setting up an SSL certificate for Zabbix and installing Zabbix Agent2 on Ubuntu. Ensure all steps are followed to properly configure your system for secure and efficient monitoring with Zabbix.
+
+```
+
+> This documentation includes all necessary steps for setting up SSL certificates and configuring Zabbix Agent2, providing clear instructions for manual and automated processes.
