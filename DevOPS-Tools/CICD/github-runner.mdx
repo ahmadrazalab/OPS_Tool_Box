@@ -1,0 +1,166 @@
+# GitHub Self-Hosted Runner Setup on Ubuntu with `systemctl` Service
+
+This guide provides steps to set up a GitHub self-hosted runner on an Ubuntu server and run it as a service using `systemctl`.
+
+## Prerequisites
+
+- **Ubuntu server** with root or `sudo` access.
+- **GitHub repository** or organization where the runner will be connected.
+- A **GitHub personal access token** with the necessary permissions to add self-hosted runners.
+
+## Step 1: Download and Configure the GitHub Runner
+
+1. **Create a directory** for the runner:
+   ```bash
+   mkdir -p ~/actions-runner && cd ~/actions-runner
+   ```
+
+2. **Download the GitHub runner** binary:
+   Replace `REPO_OWNER` and `REPO_NAME` with the owner and repository names, or use your organization name if you're adding a runner to an organization.
+
+   ```bash
+   # Replace version with the latest from https://github.com/actions/runner/releases
+   curl -o actions-runner-linux-x64.tar.gz -L https://github.com/actions/runner/releases/download/v2.305.0/actions-runner-linux-x64-2.305.0.tar.gz
+   ```
+
+3. **Extract the runner**:
+   ```bash
+   tar xzf actions-runner-linux-x64.tar.gz
+   ```
+
+4. **Configure the runner**:
+   You can find the registration token in the GitHub repository or organization settings under **Settings > Actions > Runners**.
+
+   ```bash
+   ./config.sh --url https://github.com/REPO_OWNER/REPO_NAME --token YOUR_REGISTRATION_TOKEN
+   ```
+
+## Step 2: Create the `run.sh` Script
+
+1. **Create `run.sh`** to ensure the runner restarts automatically in case of failure.
+
+   ```bash
+   nano ~/actions-runner/run.sh
+   ```
+
+2. **Add the following content** to `run.sh`:
+   ```bash
+   #!/bin/bash
+   cd /home/$USER/actions-runner
+   ./run.sh --once
+   ```
+
+3. **Make `run.sh` executable**:
+   ```bash
+   chmod +x ~/actions-runner/run.sh
+   ```
+
+## Step 3: Set Up `systemctl` Service
+
+1. **Create a new systemd service** file for the runner:
+   ```bash
+   sudo nano /etc/systemd/system/github-runner.service
+   ```
+
+2. **Add the following configuration** to the service file:
+   ```ini
+   [Unit]
+   Description=GitHub Actions Runner
+   After=network.target
+
+   [Service]
+   ExecStart=/home/$USER/actions-runner/run.sh
+   User=$USER
+   WorkingDirectory=/home/$USER/actions-runner
+   Restart=always
+   RestartSec=10
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+   ```ini
+   [Unit]
+   Description=GitHub Self-Hosted Runner
+   After=network.target
+
+   [Service]
+   # Change these paths to your runner's installation directory
+   ExecStart=/home/ubuntu/paytring-runners/magic/run.sh
+   User=ubuntu
+   WorkingDirectory=/home/ubuntu/paytring-runners/magic
+   Environment="RUNNER_ALLOW_RUNASROOT=1"
+   # If you want to restart the service automatically in case of failure
+   Restart=always
+   RestartSec=10
+
+   [Install]
+   WantedBy=multi-user.target
+   ```  
+
+
+   > Replace `$USER` with your actual username or use `$USER` if applicable in this context. `NOTE:` Github runner cannot be run as root 
+
+3. **Reload the systemd daemon** to recognize the new service:
+   ```bash
+   sudo systemctl daemon-reload
+   ```
+
+4. **Enable and start the service**:
+   ```bash
+   sudo systemctl enable github-runner
+   sudo systemctl start github-runner
+   ```
+
+5. **Verify the runner is active**:
+   ```bash
+   sudo systemctl status github-runner
+   ```
+
+   You should see an "active (running)" status if the service is correctly set up.
+
+## Step 4: Confirm Runner Connection in GitHub
+
+Go to your **GitHub repository or organization settings** under **Settings > Actions > Runners** to check if the runner is connected and ready.
+
+## Managing the GitHub Runner Service
+
+- **Start the service**: `sudo systemctl start github-runner`
+- **Stop the service**: `sudo systemctl stop github-runner`
+- **Restart the service**: `sudo systemctl restart github-runner`
+- **Check service status**: `sudo systemctl status github-runner`
+
+## Troubleshooting
+
+- Check the runner logs:
+  ```bash
+  journalctl -u github-runner -f
+  ```
+- Make sure your GitHub registration token is up to date.
+
+## Unregistering the Runner
+
+If you need to unregister the runner, stop the service and remove it:
+
+1. **Stop the service**:
+   ```bash
+   sudo systemctl stop github-runner
+   ```
+
+2. **Remove the service**:
+   ```bash
+   sudo systemctl disable github-runner
+   sudo rm /etc/systemd/system/github-runner.service
+   ```
+
+3. **Unregister the runner** in GitHub:
+   ```bash
+   ./config.sh remove --token YOUR_REGISTRATION_TOKEN
+   ```
+
+4. **Clean up** by deleting the runner directory:
+   ```bash
+   rm -rf ~/actions-runner
+   ```
+
+---

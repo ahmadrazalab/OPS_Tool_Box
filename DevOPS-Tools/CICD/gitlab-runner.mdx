@@ -1,0 +1,137 @@
+# Configure GitLab Runner Setup
+
+This document provides a step-by-step guide to configure GitLab Runner on an Ubuntu system.
+
+## CMDS Overview
+
+```bash
+#!/bin/bash
+
+# Update the package list
+sudo apt update -y
+
+# Install prerequisites
+sudo apt install -y curl
+
+# Install GitLab Runner
+curl -L "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh" | sudo bash
+sudo apt-get install gitlab-runner
+
+# Display available versions of GitLab Runner
+apt-cache madison gitlab-runner
+
+# Display the installed GitLab Runner version
+sudo gitlab-runner -version
+
+# Display the status of GitLab Runner
+sudo gitlab-runner status
+
+# Start GitLab Runner service
+sudo gitlab-runner start
+
+# Enable GitLab Runner service to start on boot
+sudo gitlab-runner enable
+
+# Verify GitLab Runner service
+sudo gitlab-runner verify
+
+# Grant sudo privileges to gitlab-runner
+echo "gitlab-runner ALL=(ALL:ALL) ALL" | sudo tee -a /etc/sudoers.d/sudoers
+echo "gitlab-runner ALL=(ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers.d/sudoers
+
+# Register the runner, replace the variables with actual values
+sudo gitlab-runner register \
+  --non-interactive \
+  --url "https://example.in/" \
+  --registration-token "??????" \
+  --executor "shell" \
+  --tag-list "tag1,tag2" \
+  --description "Shell Runner"
+```
+
+### Steps Explained
+
+1. **Update Package List**:
+   ```bash
+   sudo apt update -y
+   ```
+   Updates the package list to ensure the latest versions are available.
+
+2. **Install Prerequisites**:
+   ```bash
+   sudo apt install -y curl
+   ```
+   Installs `curl`, which is required to download the GitLab Runner installation script.
+
+3. **Install GitLab Runner**:
+   ```bash
+   curl -L "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh" | sudo bash
+   sudo apt-get install gitlab-runner
+   ```
+   Downloads and runs the GitLab Runner installation script, then installs GitLab Runner.
+
+4. **Display Available Versions**:
+   ```bash
+   apt-cache madison gitlab-runner
+   ```
+   Lists all available versions of GitLab Runner.
+
+5. **Display Installed Version**:
+   ```bash
+   sudo gitlab-runner -version
+   ```
+   Shows the currently installed version of GitLab Runner.
+
+6. **Display Runner Status**:
+   ```bash
+   sudo gitlab-runner status
+   ```
+   Checks the current status of the GitLab Runner service.
+
+7. **Start GitLab Runner Service**:
+   ```bash
+   sudo gitlab-runner start
+   ```
+   Starts the GitLab Runner service.
+
+8. **Enable GitLab Runner Service on Boot**:
+   ```bash
+   sudo gitlab-runner enable
+   ```
+   Ensures the GitLab Runner service starts automatically on system boot.
+
+9. **Verify GitLab Runner Service**:
+   ```bash
+   sudo gitlab-runner verify
+   ```
+   Verifies the GitLab Runner service is running correctly.
+
+10. **Grant Sudo Privileges to GitLab Runner**:
+    ```bash
+    echo "gitlab-runner ALL=(ALL:ALL) ALL" | sudo tee -a /etc/sudoers.d/sudoers
+    echo "gitlab-runner ALL=(ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers.d/sudoers
+    ```
+    Grants the `gitlab-runner` user full sudo privileges with and without password prompts.
+
+11. **Register the GitLab Runner**:
+    ```bash
+    sudo gitlab-runner register \
+      --non-interactive \
+      --url "https://example.in/" \
+      --registration-token "??????" \
+      --executor "shell" \
+      --tag-list "tag1,tag2" \
+      --description "Shell Runner"
+    ```
+    Registers the GitLab Runner with a GitLab instance using the provided URL and registration token.
+
+### Additional Commands
+
+ **Runner Configuration File**:
+   ```bash
+   /etc/gitlab-runner/config.toml
+   ```
+   The main configuration file for GitLab Runner.
+
+
+> By following these steps, you can set up and configure a GitLab Runner to automate your CI/CD pipelines efficiently.

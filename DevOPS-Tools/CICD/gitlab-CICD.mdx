@@ -1,0 +1,73 @@
+## Basic CI/CD Pipeline Example
+This document provides examples of CI/CD pipeline configurations for automating testing, building, and deploying applications. 
+
+### `.gitlab-ci.yml`
+
+```yaml
+stages:
+  - build
+  - test
+  - deploy
+
+build-job:
+  stage: build
+  script:
+    - echo "Compiling the code... 🛠️"
+    - echo "Compile complete. ✅"
+
+unit-test-job:
+  stage: test
+  script:
+    - echo "Running unit tests... This will take about 60 seconds. 🧪"
+    - sleep 60
+    - echo "Code coverage is 90% 📊"
+
+lint-test-job:
+  stage: test
+  script:
+    - echo "Linting code... This will take about 10 seconds. 🔍"
+    - sleep 10
+    - echo "No lint issues found. 🧹"
+
+deploy-job:
+  stage: deploy
+  script:
+    - echo "Deploying application... 🚀"
+    - echo "Application successfully deployed. 🎉"
+    - echo "Completed... ✅"
+```
+
+### Explanation
+
+1. **Variables**: 
+   - `IMAGE_NAME` and `IMAGE_TAG` are defined to specify the Docker image name and tag.
+
+2. **Stages**:
+   - `test`: Runs tests to ensure the code is working correctly.
+   - `build`: Builds the Docker image.
+   - `deploy`: Deploys the application to a server.
+
+3. **Jobs**:
+   - `run_tests`: Uses Python image, installs `make`, and runs tests.
+   - `build_image`: Uses Docker-in-Docker to build and push Docker images.
+   - `deploy`: Uses SSH to connect to the server, remove old containers, and run the new Docker container.
+
+### Additional Examples
+
+- **Build Job**: Compiles the code.
+- **Unit Test Job**: Runs unit tests and checks code coverage.
+- **Lint Test Job**: Checks the code for linting issues.
+- **Deploy Job**: Deploys the application if all tests pass.
+
+### Icons and Emojis
+
+- 🛠️: Build
+- ✅: Success
+- 🧪: Testing
+- 📊: Coverage
+- 🔍: Linting
+- 🧹: Cleaning
+- 🚀: Deployment
+- 🎉: Celebration
+
+> By using these configurations, you can set up a robust CI/CD pipeline that automates the process of testing, building, and deploying your applications.
