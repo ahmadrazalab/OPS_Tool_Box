@@ -1,0 +1,172 @@
+### 🐳 Sample Dockerfile - 1
+
+```dockerfile
+# 🛠️ Use an official base image (e.g., Ubuntu 20.04)
+FROM ubuntu:20.04
+
+# 🌍 Set environment variables
+ENV MY_ENV_VAR=value
+
+# 📦 Install system packages and dependencies
+RUN apt-get update && \
+    apt-get install -y package1 package2 && \
+    apt-get clean
+
+# 📂 Copy files or directories from the host to the image
+COPY ./local-files /app/
+
+# 🏢 Set the working directory for subsequent commands
+WORKDIR /var/www/html
+
+# 🌐 Expose a port on the container
+EXPOSE 80
+
+# 🏃 Define a default command to run when the container starts
+CMD ["./start.sh"]
+
+# 🚀 Start nginx when the container runs
+CMD ["nginx", "-g", "daemon off;"]
+
+# 🏗️ Define an entry point for the container
+ENTRYPOINT ["/entrypoint.sh"]
+
+# 🩺 Define a healthcheck command
+HEALTHCHECK CMD curl -f http://localhost/ || exit 1
+
+# 🏷️ Add metadata to the image
+LABEL version="1.0" maintainer="Your Name <your.email@example.com>"
+
+# 💾 Specify a volume that can be mounted by the container
+VOLUME ["/data"]
+
+# 👤 Create a new user with specific user and group IDs
+RUN groupadd -r mygroup && \
+    useradd -r -g mygroup myuser
+
+# 🚫 Switch to a non-root user
+USER myuser
+
+# 🌐 Copy files from a remote URL to the image
+ADD http://example.com/file.tar.gz /tmp/
+
+# 🧹 Remove temporary files and clean up
+RUN rm -rf /tmp/*
+
+# 💻 Execute a shell command during build
+SHELL ["/bin/bash", "-c"]
+
+# ⚙️ Set a build-time ARG (can be passed during the build)
+ARG MY_ARG=value
+
+# 📂 Create a mount point for a named volume
+VOLUME /myvolume
+
+# 📣 Set the shell form of ENTRYPOINT
+ENTRYPOINT echo "Hello, World!"
+
+# 🏗️ Use multi-stage builds
+FROM builder AS intermediate
+RUN build-something
+
+# 📤 Copy artifacts from the intermediate stage
+COPY --from=intermediate /app/artifacts /final/
+
+# 👥 Define the default user for the image
+USER nobody:nogroup
+```
+
+---
+
+### 🐳 Sample Dockerfile - 2
+
+```dockerfile
+# 🛠️ Use Amazon Linux 2 base image
+FROM amazonlinux:2
+
+# 📦 Update repositories and install PHP from Amazon Linux Extras
+RUN amazon-linux-extras enable php8.2 && \
+    yum install -y php php-cli php-common php-json php-mbstring php-pdo php-mysqlnd php-opcache php-xml php-gd php-curl php-zip
+
+# 📦 Install Apache and other dependencies
+RUN yum update -y && \
+    yum install -y httpd curl zip unzip \
+        libpng-devel zlib-devel libxml2-devel libzip-devel libonig-devel && \
+    yum clean all
+
+# 🎼 Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# 📦 Enable PHP and install PHP, Apache, and necessary development tools for Kafka
+RUN amazon-linux-extras enable php8.2 && \
+    yum install -y php php-cli php-common php-json php-mbstring php-pdo php-mysqlnd php-opcache php-xml php-gd php-curl php-zip httpd librdkafka-devel php-pear php-devel gcc make && \
+    pecl install rdkafka && \
+    echo "extension=rdkafka.so" > /etc/php.d/50-rdkafka.ini
+
+# 📦 Install other dependencies for Kafka
+RUN yum install -y curl zip unzip libpng-devel zlib-devel libxml2-devel libzip-devel libonig-devel && \
+    yum clean all
+
+# 👥 Create Apache user and group
+RUN groupadd -r www-data && useradd -r -g www-data www-data
+
+# ⚙️ Enable Apache modules
+RUN sed -i 's/^#LoadModule rewrite_module/LoadModule rewrite_module/' /etc/httpd/conf.modules.d/00-base.conf && \
+    sed -i 's/^#LoadModule negotiation_module/LoadModule negotiation_module/' /etc/httpd/conf.modules.d/00-base.conf
+
+# 📝 Redirect Apache logs to stdout and stderr
+# RUN ln -sf /dev/stdout /var/log/httpd/access_log && \
+#     ln -sf /dev/stderr /var/log/httpd/error_log
+
+# 🔄 Update laravel-kafka-logger version
+RUN composer require hhxsv5/laravel-kafka-logger:^1.0
+
+# 📂 Copy your custom httpd.conf file to the container
+COPY httpd.conf /etc/httpd/conf/httpd.conf
+
+# 🏢 Set working directory
+WORKDIR /var/www/html
+
+# 📂 Copy the application files to the working directory
+COPY . /var/www/html/
+
+# 📂 Copy env
+#COPY .env.example .env
+
+# 🔒 Set permissions for the PID file and directory
+RUN chown -R www-data:www-data /var/www/html /run/httpd
+
+# 🧹 Remove existing Apache PID file if it exists
+RUN rm -f /run/httpd/httpd.pid
+
+# ❌ Check for and kill existing Apache processes
+RUN pkill httpd || true
+
+# 🔒 Set permissions for the log directory and error log file
+RUN chown -R www-data:www-data /var/log/httpd
+RUN touch /var/log/httpd/error_log
+RUN chown www-data:www-data /var/log/httpd/error_log
+
+# 📦 Install all PHP dependencies
+RUN composer install
+
+# 🔑 Key generate command
+RUN php artisan key:generate --no-interaction
+
+# 🔑 List of credentials
+#RUN php artisan app:creds --list
+
+# 🔒 Set permissions for the Laravel storage folder
+RUN chmod -R 777 /var/www/html/storage
+RUN chmod -R 777 /var/www/html/bootstrap/cache
+
+# 👥 Set the user to run as Apache user
+USER www-data
+
+# 🌐 Expose the port Apache is reachable on
+EXPOSE 8001
+
+# 🚀 Start Apache service
+CMD ["/usr/sbin/httpd", "-D", "FOREGROUND"]
+```
+
+> These Dockerfiles are examples of how to create Docker images for different environments, using various features and best practices. They demonstrate the use of environment variables, multi-stage builds, security practices by switching to non-root users, and exposing necessary ports for web services.

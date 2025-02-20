@@ -1,0 +1,192 @@
+# Docker and Docker Compose Commands Documentation
+
+## Docker Installation
+
+### Official Installation Documentation
+- [Docker Installation Guide](https://docs.docker.com/engine/install/)
+
+### Install Docker (via Script)
+```bash
+curl -fsSL https://get.docker.com | sudo sh
+```
+
+### Other Installation Methods
+#### DigitalOcean Method
+```bash
+sudo apt update
+sudo apt install apt-transport-https ca-certificates curl software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt update
+sudo apt install docker-ce
+sudo systemctl status docker
+```
+
+### Post-Installation Steps
+```bash
+# Remove old Docker files
+sudo apt-get remove docker docker-engine docker.io
+# Install Docker
+sudo apt install docker.io
+# Check Docker version
+docker --version
+# Add user to Docker group
+sudo groupadd docker
+sudo usermod -aG docker <USER>
+# Restart system to apply group changes
+```
+
+## Docker Commands
+
+### Running Docker Containers
+```bash
+# Run a Docker image in detached mode
+docker run -d --name <myimg_name> -p 8080:8080 <img_name>
+# Run a specific container
+docker run -d --name nginx-rev -p 8080:8080 nginx
+# Run and enter a terminal inside the container
+docker run -it --name ubuntu-container ubuntu
+```
+
+### Managing Containers
+```bash
+# Remove all stopped containers
+docker rm $(docker ps -a -q)
+# Remove all locally stored images
+docker rmi $(docker images -q)
+# Stop all running containers
+docker stop $(docker ps -q)
+# Delete all Docker images
+docker image prune -a
+# Delete all stopped containers
+docker container prune
+```
+
+### Docker Registry (Private)
+```bash
+# Log in to private registry
+docker login private-registory.io
+# Run a container from private registry
+docker run private-registory.io/apps/internal-append
+# Push image to private registry
+docker push private-registory.io/containername
+# Push image to public registry
+docker login
+docker build . -t username/imagesname:tag
+docker push username/imagesname:tag
+```
+
+### Container Details and Logs
+```bash
+# Get IP of all running containers
+docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -q)
+# View container logs
+docker logs <cont_ID/name>
+# Inspect container details
+docker inspect <cont_ID/Name>
+```
+
+### Docker Volumes
+```bash
+# Create a data volume
+docker volume create data_volume
+# Run a container with a data volume
+docker run -v data_volume:/var/lib/mysql mysql
+# Run a container with a custom system path
+docker run -v /data/mysql:/var/lib/mysql mysql
+# New way of mounting volume
+docker run --mount type=bind,source=/data/mysql,target=/var/lib/mysql mysql
+```
+
+### Docker Networks
+```bash
+# Run a container with custom network settings
+docker run ubuntu --network=none/bridge/host
+# List Docker networks
+docker network ls
+# Create a custom network
+docker network create --driver bridge --subnet 182.18.0.0/16 custom-isolated-network
+```
+
+## Docker Compose Installation
+
+### Official Documentation
+- [Docker Compose Installation Guide](https://docs.docker.com/compose/install/linux/)
+
+### Install Docker Compose
+```bash
+mkdir -p ~/.docker/cli-plugins/
+curl -SL https://github.com/docker/compose/releases/download/v2.3.3/docker-compose-linux-x86_64 -o ~/.docker/cli-plugins/docker-compose
+chmod +x ~/.docker/cli-plugins/docker-compose
+docker compose version
+```
+
+## Docker Compose Commands
+
+### Basic Operations
+```bash
+# Start containers in detached mode
+docker-compose up -d
+# List running containers
+docker-compose ps
+# View logs of containers
+docker-compose logs
+# Stop running containers
+docker-compose stop
+# Bring down containers and remove them
+docker-compose down
+# Pause containers
+docker-compose pause
+# Unpause containers
+docker-compose unpause
+```
+
+### Configuration and Files
+```bash
+# Edit the docker-compose.yml file
+nano docker-compose.yml
+# Remove specific image
+docker image rm nginx:alpine
+```
+
+## Dockerfile Instructions
+
+### Build Docker Images
+```bash
+# Build Docker image with a custom Dockerfile
+docker build -f /var/filepath -t custom-img-name
+# Build Docker image with default Dockerfile
+docker build . -t custom-image-name
+```
+
+### Environment Variables
+```bash
+# Run Docker container with environment variables
+docker run -e ENVAR=variablename nginx
+```
+
+### CMD vs ENTRYPOINT
+```bash
+# CMD in Dockerfile
+CMD ["command", "parameter"]
+CMD command parameter
+# ENTRYPOINT in Dockerfile
+ENTRYPOINT ["sleep"]
+ENTRYPOINT ["sleep"] CMD ["5"]
+# Override ENTRYPOINT during docker run
+docker run --entrypoint sleep2.0 ubuntu-image 10
+```
+
+### Resource Allocation
+```bash
+# Allocate CPU resources
+docker run --cpus=.5 ubuntu
+# Allocate memory resources
+docker run --memory=100m ubuntu
+```
+
+### Remote Docker CLI
+```bash
+docker -H=remote-host-ip:port run nginx "etc"
+```
+

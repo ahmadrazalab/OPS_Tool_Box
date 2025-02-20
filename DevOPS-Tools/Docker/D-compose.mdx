@@ -1,0 +1,101 @@
+# 📄 Sample YAML File for Docker-Compose
+
+```yaml
+version: '3.8'
+
+services:
+  🌐 web:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./web-content:/usr/share/nginx/html
+    networks:
+      - frontend
+    depends_on:
+      - api
+
+  🔧 api:
+    image: node:14
+    working_dir: /app
+    environment:
+      NODE_ENV: production
+    volumes:
+      - ./api:/app
+    networks:
+      - frontend
+      - backend
+    ports:
+      - "3000:3000"
+
+  🗄️ db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  📊 monitoring:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus-config:/etc/prometheus
+    networks:
+      - backend
+
+networks:
+  🌉 frontend:
+    driver: bridge
+  🌉 backend:
+    driver: bridge
+
+volumes:
+  📦 postgres-data:
+  📦 prometheus-config:
+```
+
+### 📝 Explanation
+
+#### Services
+
+- **🌐 web**: 
+  - **Image**: Uses the lightweight `nginx:alpine` image.
+  - **Ports**: Maps port 80 on the host to port 80 on the container.
+  - **Volumes**: Mounts the `./web-content` directory on the host to `/usr/share/nginx/html` in the container.
+  - **Networks**: Connected to the `frontend` network.
+  - **Depends_on**: Depends on the `api` service.
+
+- **🔧 api**:
+  - **Image**: Uses the `node:14` image.
+  - **Working Directory**: Sets `/app` as the working directory.
+  - **Environment**: Sets `NODE_ENV` to `production`.
+  - **Volumes**: Mounts the `./api` directory on the host to `/app` in the container.
+  - **Networks**: Connected to both `frontend` and `backend` networks.
+  - **Ports**: Maps port 3000 on the host to port 3000 on the container.
+
+- **🗄️ db**:
+  - **Image**: Uses the `postgres:13` image.
+  - **Environment**: Sets up the database with `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD`.
+  - **Volumes**: Mounts a named volume `postgres-data` to `/var/lib/postgresql/data`.
+  - **Networks**: Connected to the `backend` network.
+
+- **📊 monitoring**:
+  - **Image**: Uses the `prom/prometheus` image.
+  - **Ports**: Maps port 9090 on the host to port 9090 on the container.
+  - **Volumes**: Mounts the `./prometheus-config` directory on the host to `/etc/prometheus` in the container.
+  - **Networks**: Connected to the `backend` network.
+
+#### Networks
+
+- **🌉 frontend**: A bridge network for the `web` and `api` services.
+- **🌉 backend**: A bridge network for the `api`, `db`, and `monitoring` services.
+
+#### Volumes
+
+- **📦 postgres-data**: A named volume for persisting PostgreSQL data.
+- **📦 prometheus-config**: A named volume for storing Prometheus configuration files.
