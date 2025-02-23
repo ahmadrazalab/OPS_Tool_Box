@@ -1,0 +1,119 @@
+
+# GitLab Edition Upgrade Guide
+
+## Overview
+
+This guide provides instructions for upgrading your self-hosted GitLab Community Edition (CE) instance. It is essential to follow the correct upgrade path, especially for minor version upgrades.
+
+---
+
+## Prerequisites
+
+- Ensure you have root or sudo access to the server.
+- Backup your GitLab instance before performing an upgrade.
+- Review the [official GitLab upgrade documentation](https://docs.gitlab.com/ee/update/package/) for any specific release notes or breaking changes.
+
+---
+
+## Step 1: Check Available Versions
+
+To see the available versions of GitLab, use the following command:
+
+```bash
+sudo apt-cache madison gitlab-ee
+```
+
+This command will list all the versions available for installation.
+
+---
+
+## Step 2: Upgrade GitLab
+
+### 2.1 Upgrade Version by Version
+
+To upgrade GitLab, you must follow the minor version upgrade path. For example, if you are upgrading from version `16.6.1` to `16.7.4`, perform the following steps:
+
+1. **Update the package index:**
+
+   ```bash
+   sudo apt update
+   ```
+
+2. **Install the specific version of GitLab:**
+
+   ```bash
+   sudo apt install gitlab-ee=16.7.4-ee.0
+   ```
+
+   Repeat this step for each minor version until you reach the desired version (e.g., upgrade from `16.6.1` to `16.7.4`).
+
+### 2.2 Upgrade to the Latest Version
+
+If you want to upgrade to the latest version (e.g., `16.8.1`), you can run:
+
+```bash
+sudo apt update
+sudo apt install gitlab-ee
+```
+
+Alternatively, you can specify the exact version:
+
+```bash
+sudo apt install gitlab-ee=16.8.1-ee.0
+```
+
+---
+
+## Step 3: Restart and Reconfigure GitLab
+
+After the upgrade, you need to restart and reconfigure GitLab:
+
+1. **Restart GitLab:**
+
+   ```bash
+   sudo gitlab-ctl restart
+   ```
+
+2. **Reconfigure GitLab:**
+
+   ```bash
+   sudo gitlab-ctl reconfigure
+   ```
+
+---
+
+## Step 4: Verify the Upgrade
+
+After the upgrade, verify that your GitLab instance is functioning correctly by performing the following tests:
+
+- Clone an existing repository.
+- Push changes to a repository.
+- Create a new repository.
+- Test the user interface (UI) by editing a file, merging branches, creating runners, and creating branches.
+
+---
+
+## Important Notes
+
+- **Skipping Auto Backup (Not Recommended):** If you need to skip the auto-backup during the upgrade for any reason, you can create a file:
+
+   ```bash
+   sudo touch /etc/gitlab/skip-auto-backup
+   ```
+
+- **Backup Command:** To create a backup manually, run:
+
+   ```bash
+   gitlab-backup create CRON=1
+   ```
+
+- **Upgrade Path:** Only minor versions should be upgraded one by one. For major version upgrades, refer to the specific upgrade instructions in the official documentation.
+
+
+---
+
+## Conclusion
+
+Following this guide will help you successfully upgrade your GitLab Community Edition instance while ensuring minimal disruption. For more detailed information and advanced configurations, refer to the [GitLab documentation](https://docs.gitlab.com/ee/update/package/).
+
+--- 
