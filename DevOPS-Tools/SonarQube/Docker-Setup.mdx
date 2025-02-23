@@ -1,0 +1,72 @@
+# SonarQube and Sonar Scanner Docker Setup
+
+## Prerequisites
+- Docker and Docker Compose installed on your system.
+
+## Running SonarQube Server with Docker Compose
+
+1. **Create `sonar_container.yml` for SonarQube**
+   Ensure you have a `sonar_container.yml` file for Docker Compose with the necessary configuration. Example `sonar_container.yml`:
+
+   ```yaml
+   version: '3'
+   services:
+     sonarqube:
+       image: sonarqube:latest
+       ports:
+         - "9000:9000"
+       volumes:
+         - sonarqube_conf:/opt/sonarqube/conf
+         - sonarqube_data:/opt/sonarqube/data
+         - sonarqube_logs:/opt/sonarqube/logs
+       environment:
+         - SONARQUBE_JDBC_URL=jdbc:h2:tcp://localhost:9092/sonar
+         - SONARQUBE_JDBC_USERNAME=sa
+         - SONARQUBE_JDBC_PASSWORD=sa
+
+   volumes:
+     sonarqube_conf:
+     sonarqube_data:
+     sonarqube_logs:
+   ```
+
+2. **Start SonarQube Server**
+   ```bash
+   docker-compose -f sonar_container.yml up -d
+   ```
+   This will start the SonarQube server in detached mode.
+
+## Running Sonar Scanner CLI
+
+1. **Prepare Your Code Directory**
+   Ensure your code is located in a directory you will mount into the Sonar Scanner container. For example, if your code is located in `/path/to/code`, use that path.
+
+2. **Run Sonar Scanner CLI**
+   ```bash
+   docker run \
+       --rm \
+       -e SONAR_HOST_URL="http://192.168.1.5:9000" \
+       -e SONAR_SCANNER_OPTS="-Dsonar.projectKey=sonar-test" \
+       -e SONAR_TOKEN="sqp_dad84532151892aab8df5c58fe48eb58b54b4a5c" \
+       -v /path/to/code:/usr/src \
+       sonarsource/sonar-scanner-cli
+   ```
+   This command will:
+   - Set the SonarQube server URL with `SONAR_HOST_URL`.
+   - Configure the Sonar project key with `SONAR_SCANNER_OPTS`.
+   - Provide the authentication token with `SONAR_TOKEN`.
+   - Mount the local code directory (`/path/to/code`) to `/usr/src` in the container.
+   - Run the `sonarsource/sonar-scanner-cli` container to perform the code analysis.
+
+3. **Clean Up**
+   The `--rm` flag ensures that the Sonar Scanner container is removed after the scan completes.
+
+## Summary
+
+- **SonarQube Server**: Managed using Docker Compose. Configuration is specified in `sonar_container.yml`.
+- **Sonar Scanner**: Analyzes code by running in a Docker container and sending results to the SonarQube server.
+- **Cleanup**: The container used for scanning is automatically removed after execution.
+
+---
+
+> Feel free to adjust the IP address, token, project key, and paths as per your environment and requirements.
