@@ -1,0 +1,95 @@
+package main
+
+import (
+        "fmt"
+        "html/template"
+        "log"
+        "net/http"
+        "os/exec"
+)
+
+var (
+        logFiles = map[string]string{
+                "/breeze": "/var/log/breeze/breeze.log",
+//              "/demo":   "/var/log/demo/demo.log",
+                "/quick":  "/var/log/quick/quick.log",
+        }
+        username = "yourusername" // Set your username here
+        password = "seamlessslogs" // Set your password here
+)
+
+const (
+        port = ":4070" // Port to run the server on
+)
+
+func basicAuth(next http.HandlerFunc) http.HandlerFunc {
+        return func(w http.ResponseWriter, r *http.Request) {
+                u, p, ok := r.BasicAuth()
+                if !ok || u != username || p != password {
+                        w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+                        http.Error(w, "Unauthorized", http.StatusUnauthorized)
+                        return
+                }
+                next(w, r)
+        }
+}
+
+func showLogsHandler(w http.ResponseWriter, r *http.Request) {
+        logFile, exists := logFiles[r.URL.Path]
+        if !exists {
+                http.NotFound(w, r)
+                return
+        }
+
+        if _, err := exec.LookPath("tail"); err != nil {
+                http.Error(w, "The 'tail' command is not available on this system.", http.StatusInternalServerError)
+                return
+        }
+
+        cmd := exec.Command("sh", "-c", fmt.Sprintf("tail -n 1000 %s | tac", logFile))
+//      cmd := exec.Command("tail", "-n", "1000", logFile)
+        output, err := cmd.CombinedOutput()
+        if err != nil {
+                http.Error(w, "Error reading the log file: "+err.Error(), http.StatusInternalServerError)
+                return
+        }
+
+        tmpl := `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logs</title>
+</head>
+<body>
+<pre>{{.}}</pre>
+</body>
+</html>`
+
+        t, err := template.New("logs").Parse(tmpl)
+        if err != nil {
+                http.Error(w, "Error rendering the logs: "+err.Error(), http.StatusInternalServerError)
+                return
+        }
+
+        w.Header().Set("Content-Type", "text/html")
+        if err := t.Execute(w, string(output)); err != nil {
+                http.Error(w, "Error displaying the logs: "+err.Error(), http.StatusInternalServerError)
+        }
+}
+
+func rootHandler(w http.ResponseWriter, r *http.Request) {
+        http.NotFound(w, r)
+}
+
+func main() {
+        http.HandleFunc("/", rootHandler)
+        for path := range logFiles {
+                http.HandleFunc(path, basicAuth(showLogsHandler))
+        }
+
+        fmt.Printf("Server running on http://0.0.0.0%s\n", port)
+        if err := http.ListenAndServe(port, nil); err != nil {
+                log.Fatalf("Failed to start server: %v", err)
+        }
+}
