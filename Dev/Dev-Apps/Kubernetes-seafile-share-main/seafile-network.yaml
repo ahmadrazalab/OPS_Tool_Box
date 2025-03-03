@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: NetworkPolicy
-metadata:
-  name: seafile-net
-spec:
-  podSelector:
-    matchLabels:
-      app: seafile
-  ingress: []
